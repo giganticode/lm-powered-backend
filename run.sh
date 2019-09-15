@@ -1,2 +1,3 @@
 #!/bin/sh
-php -S localhost:8080
+python webservice.py 
+$SHELL
