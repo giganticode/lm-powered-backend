@@ -77,6 +77,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 for s in f:
                     self.wfile.write(str.encode(s))
                 f.close()
+            
+            return
 
         self.send_response(200)
         self.end_headers()
@@ -85,25 +87,35 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if (parsed.query and urlparse.parse_qs(parsed.query)['file']):
             hashedName = urlparse.parse_qs(parsed.query)['file'][0]
             print(hashedName)
-            self.wfile.write(str.encode(files[hashedName] + "<br>"))
-            self.wfile.write(b'<pre>')
+            self.wfile.write(str.encode("<h1>" + files[hashedName] + "</h1>"))
+            self.wfile.write(b'<div class="container"><pre class="entropy">')
             aggregator = 'full-token-average'
-            filePath = os.path.join(rootPath, 'cache', 'output', aggregator, hashedName)
-            print(filePath)
+            contentFilePath = os.path.join(rootPath, 'cache', 'input', aggregator, hashedName)
+            entropyFilePath = os.path.join(rootPath, 'cache', 'output', aggregator, hashedName)
+            print(entropyFilePath)
 
-            with open(filePath, 'r') as content_file:
+            with open(entropyFilePath, 'r') as content_file:
                 s = '</span>\n<span>'
                 self.wfile.write(b'<span>')
                 self.wfile.write(str.encode(s.join(content_file.read().splitlines())))
                 self.wfile.write(b'</span>')
                 content_file.close()
 
-            self.wfile.write(b'</pre>')
+            self.wfile.write(b'</pre><pre>')
+
+            with open(contentFilePath, 'r') as content_file:
+                s = '</span>\n<span>'
+                self.wfile.write(b'<span>')
+                self.wfile.write(str.encode(s.join(content_file.read().splitlines())))
+                self.wfile.write(b'</span>')
+                content_file.close()
+
+            self.wfile.write(b'</pre></div>')
+
         else:
         
             for hash in files:
                 filePath = files[hash]
-                end = None
                 self.wfile.write(str.encode(hash + ' => <a target="_blank" href="/?file=' + hash + '">' + filePath + '</a><br><br>'))
 
         self.wfile.write(b'</html></body>')
