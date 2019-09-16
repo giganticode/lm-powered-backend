@@ -57,6 +57,7 @@ checkOrCreate(os.path.join(rootPath, 'cache', 'output', 'subtoken-average'))
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
+    # Get-method: only for debugging
     def do_GET(self):
         parsed = urlparse.urlparse(self.path)
 
@@ -113,7 +114,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'</pre></div>')
 
         else:
-        
             for hash in files:
                 filePath = files[hash]
                 self.wfile.write(str.encode(hash + ' => <a target="_blank" href="/?file=' + hash + '">' + filePath + '</a><br><br>'))
@@ -121,92 +121,131 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(b'</html></body>')
 
 
-    def do_POST(self):      
+    def do_POST(self):    
+        print("Got post =================================================================")
         content_len = int(self.headers.get('Content-Length'))
         post_body = self.rfile.read(content_len).decode('utf-8')
-        print("Got post =================================================================")
-
         data = json.loads(post_body)
-        print("ts: ", data['timestamp'])
-        extension = data['extension']
-        languageId = data['languageId']
-        filePath = data['filePath']
-        noReturn = data['noReturn']
-        timestamp = data['timestamp']/1000
-        aggregator = data['aggregator']
-        content = data['content']
 
-        if not languageId in ['java', 'JAVA']:
-            print("language " + languageId + " not supported")
-            self.send_response(406)
-            self.end_headers()
-            return
+        # check if autocompletion
+        if (self.path and os.path.splitext(self.path)[0]):
+            route = os.path.splitext(self.path)[0]
 
-        shouldCalculateEntropies = True
+            # autocompletion request
+            if (route.startswith('/autocompletion')):
+                content = data['content']
+                extension = data['extension']
+                languageId = data['languageId']
 
-        #check if file is cached
-        hashedName = hashlib.md5(filePath.encode()).hexdigest()  # str(hash(filePath))
-        print(hashedName)
-        path = os.path.join(rootPath, 'cache', 'output', aggregator, hashedName)
-		
-        files[hashedName] = filePath
-        with open(os.path.join(rootPath, 'files.json'), 'w') as outfile:		
-            json.dump(files, outfile)	
-            outfile.flush()
-            outfile.close()	
-		
-        if os.path.isfile(path):
-            modTimesinceEpoc = os.path.getmtime(path)
-            modificationTime = datetime.fromtimestamp(modTimesinceEpoc)
-            localFileTime = datetime.fromtimestamp(timestamp)
-
-            #print("file is cached... check if newer")
-            #print("Last Cache Modified Time : ", modTimesinceEpoc )
-            #print("Last Cache Modified Time : ", modificationTime )
-            #print("Last Local Modified Time : ", timestamp)			
-            #print("Last Local Modified Time : ", localFileTime )
-            
-            if modTimesinceEpoc < timestamp:
-                print("file has been modified...")
-                # calc entropies
-            else:
-                print("file has NOT been modified.")
-                shouldCalculateEntropies = False
-                # return
-
-        if shouldCalculateEntropies:
-            # save file:
-            savePath = os.path.join(rootPath, 'cache', 'input', aggregator, hashedName)
-            f = open(savePath,"w")
-            f.write(content)
-            f.close()
-
-            entropies = get_entropy_for_each_line(model, savePath, word_average, False)     ## todo agregation function
-            with open(path, 'w') as f:
-                for entropy in entropies:
-                    average = 0
-                    if (len(entropy) > 0):
-                        average = sum(entropy) / len(entropy)
+                if not languageId in ['java', 'JAVA']:
+                    print("language " + languageId + " not supported")
+                    self.send_response(406)
+                    self.end_headers()
+                    return
                     
-                    f.write(f'{average}\n')
-                f.close()
-            
+                print("context: " + content)
 
-        self.send_response(200)
-        self.end_headers()
-
-        if noReturn:
-            print("NO return data...")
-        else:
-            with open(path, 'r') as content_file:
-                content = content_file.read().splitlines()
-                floatList = []
-                for item in content:
-                    floatList.append(float(item))
-
-                encoded = json.dumps(floatList)
+                self.send_response(200)
+                self.end_headers()
+                time.sleep(0.5)
+                response = ["Here you can see proposals...", "Response from the LM", "Hello, I'm the LM"]
+                encoded = json.dumps(response)
                 self.wfile.write(encoded.encode())
-            print("return")
+                return
+
+            # search
+            elif  route.startswith('/search'):
+                # not implemented yet
+                return
+
+            # highlight
+            elif  route.startswith('/highlight'):
+                # not implemented yet   
+                return             
+
+            # codelense
+            elif  route.startswith('/codelense'):
+                # not implemented yet 
+                return
+                
+            # thumbnail
+            elif  route.startswith('/thumbnail'):
+                # not implemented yet  
+                return
+
+            # risk validation
+            elif  route.startswith('/languagemodel'):
+                extension = data['extension']
+                languageId = data['languageId']
+                filePath = data['filePath']
+                noReturn = data['noReturn']
+                timestamp = data['timestamp']/1000
+                aggregator = data['aggregator']
+                content = data['content']
+
+                if not languageId in ['java', 'JAVA']:
+                    print("language " + languageId + " not supported")
+                    self.send_response(406)
+                    self.end_headers()
+                    return
+
+                shouldCalculateEntropies = True
+
+                #check if file is cached
+                hashedName = hashlib.md5(filePath.encode()).hexdigest()  # str(hash(filePath))
+                print(hashedName)
+                path = os.path.join(rootPath, 'cache', 'output', aggregator, hashedName)
+                
+                files[hashedName] = filePath
+                with open(os.path.join(rootPath, 'files.json'), 'w') as outfile:		
+                    json.dump(files, outfile)	
+                    outfile.flush()
+                    outfile.close()	
+                
+                if os.path.isfile(path):
+                    modTimesinceEpoc = os.path.getmtime(path)
+                    
+                    if modTimesinceEpoc < timestamp:
+                        print("file has been modified...")
+                        # calc entropies
+                    else:
+                        print("file has NOT been modified.")
+                        shouldCalculateEntropies = False
+                        # return
+
+                if shouldCalculateEntropies:
+                    # save file:
+                    savePath = os.path.join(rootPath, 'cache', 'input', aggregator, hashedName)
+                    f = open(savePath,"w")
+                    f.write(content)
+                    f.close()
+
+                    entropies = get_entropy_for_each_line(model, savePath, word_average, False)     ## todo agregation function
+                    with open(path, 'w') as f:
+                        for entropy in entropies:
+                            average = 0
+                            if (len(entropy) > 0):
+                                average = sum(entropy) / len(entropy)
+                            
+                            f.write(f'{average}\n')
+                        f.close()
+                    
+
+                self.send_response(200)
+                self.end_headers()
+
+                if noReturn:
+                    print("NO return data...")
+                else:
+                    with open(path, 'r') as content_file:
+                        content = content_file.read().splitlines()
+                        floatList = []
+                        for item in content:
+                            floatList.append(float(item))
+
+                        encoded = json.dumps(floatList)
+                        self.wfile.write(encoded.encode())
+                    print("return")
 
 if __name__ == '__main__':
     print("Starting WebServer on Port ", PORT)
