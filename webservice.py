@@ -11,6 +11,8 @@ from decimal import Decimal
 from http.server   import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 import threading
+# RegEx
+import re
 
 import sys
 global rootPath
@@ -20,14 +22,22 @@ if langModelPath is None or not os.path.isdir(langModelPath):
     print("the variable 'LANG_MODEL_PATH' is not defined")
     exit()
 
-rootPath = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, langModelPath)
+# demo image
+# imgkit.from_string('Hello!', 'out.jpg')
 
+rootPath = os.path.dirname(os.path.realpath(__file__))
+
+old_path = "C:\\xamppServer\\htdocs\\webservice\\langmodels\\analysis"
+sys.path.insert(0, old_path)
 from langmodels.inference.entropies import get_entropy_for_each_line, word_average, word_entropy_list, subword_average
 from langmodels.model import TrainedModel
 
+sys.path.insert(0, langModelPath)
+from langmodels.model import TrainedModel as CompletionModel
+
 PORT = 8080
 global model
+global completionModel
 global root
 global files
 
@@ -131,31 +141,51 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         if (self.path and os.path.splitext(self.path)[0]):
             route = os.path.splitext(self.path)[0]
 
-            # autocompletion request
-            if (route.startswith('/autocompletion')):
-                content = data['content']
-                extension = data['extension']
-                languageId = data['languageId']
+            extension = data['extension']
+            languageId = data['languageId']
 
-                if not languageId in ['java', 'JAVA']:
-                    print("language " + languageId + " not supported")
-                    self.send_response(406)
-                    self.end_headers()
-                    return
-                    
-                print("context: " + content)
+            if not languageId in ['java', 'JAVA']:
+                print("language " + languageId + " not supported")
+                self.send_response(406)
+                self.end_headers()
+                return
+
+            # autocompletion request
+            if route.startswith('/autocompletion'):
+                content = data['content']
 
                 self.send_response(200)
                 self.end_headers()
-                time.sleep(0.5)
-                response = ["Here you can see proposals...", "Response from the LM", "Hello, I'm the LM"]
-                encoded = json.dumps(response)
+
+                completionModel.feed_text(content)
+
+                # this does not change the state of the completionModel:
+                predictions = completionModel.predict_next_full_token(n_suggestions=5)
+                completionModel.reset()
+
+                encoded = json.dumps(predictions)
                 self.wfile.write(encoded.encode())
                 return
 
             # search
             elif  route.startswith('/search'):
-                # not implemented yet
+                content = data['content']
+                search = data['search']
+                time.sleep(0.2)
+                lines = content.splitlines()
+                
+                ret = {}
+                for index in range(len(lines)):    
+                    line = lines[index]
+                    x = re.findall(search, line)
+                    if (len(x) > 0):
+                        ret[index] = 100
+
+                self.send_response(200)
+                self.end_headers()
+
+                encoded = json.dumps(ret)
+                self.wfile.write(encoded.encode())
                 return
 
             # highlight
@@ -166,11 +196,6 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             # codelense
             elif  route.startswith('/codelense'):
                 # not implemented yet 
-                return
-                
-            # thumbnail
-            elif  route.startswith('/thumbnail'):
-                # not implemented yet  
                 return
 
             # risk validation
@@ -229,6 +254,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                             
                             f.write(f'{average}\n')
                         f.close()
+                        print("entropies written to file")
                     
 
                 self.send_response(200)
@@ -251,6 +277,7 @@ if __name__ == '__main__':
     print("Starting WebServer on Port ", PORT)
     print("Loading Language Model")
     model = TrainedModel.get_default_model()
+    completionModel = CompletionModel.get_default_model()
     print("Language Model loaded")
 
     with HTTPServer(('localhost', PORT), SimpleHTTPRequestHandler) as httpd:
