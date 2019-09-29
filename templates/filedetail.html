@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>{{file['name']|safe}}</h1>
+
+<p>
+    <label>
+        Aggregation-function:
+        <select class="uk-select" id="aggregator" name="aggregator">
+            <option value="full-token-average" selected>full-token-average (default)</option>
+            <option value="subtoken-average">subtoken-average</option>
+            <option value="full-token-entropies">full-token-entropies</option>
+        </select>
+    </label>
+</p>
+
+<div class="uk-flex">
+    <div class="split preview" id="one">
+        <span>Entropies</span>
+        <pre id="entropy">{%for line in entropyContent%}<span>{{line|safe}}</span>{%endfor%}</pre>
+    </div>
+    <div class="split" id="two">
+        <span>Code</span>
+        <pre id="code">{%for line in fileContent%}<span>{{line|safe}}</span>{%endfor%}</pre>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/split.min.js') }}"></script>
+<script>
+    let projectHash = '{{projecthash|safe}}';
+    let fileHash = '{{filehash|safe}}';
+    let aggregator = '{{aggregator|safe}}';
+
+    Split(['#one', '#two'], {sizes: [25, 75]});
+    $('.gutter.gutter-horizontal').addClass('uk-flex uk-flex-middle uk-flex-center').html('<span uk-icon="icon: more-vertical; ratio: 4"></span>');
+
+    $('#aggregator').val(aggregator);
+
+    $('#aggregator').change(function() {
+        let aggregator = this.value;
+        window.location.replace(`/overview/${projectHash}/${fileHash}/${aggregator}`);
+    });
+
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>
+    Search
+    <button class="uk-align-right uk-margin-small-top uk-button uk-button-default" type="button"
+        uk-toggle="target: #toggle; animation:  uk-animation-fade"><span uk-icon="pencil"></span></button>
+</h1>
+
+<div id="toggle">
+    <p>
+        <label>
+            Search-query
+            <input class="uk-input" id="search" name="search"/>
+        </label>
+    </p>
+
+    <p>
+        <label>
+            Search-interval
+            <input class="uk-input" type="number" min="1" max="100" value="10" id="search-interval" name="search-interval"/>
+        </label>
+    </p>
+
+    <p>
+        <label>
+            Code
+            <textarea class="uk-textarea" rows="10" id="content" name="content"></textarea>
+        </label>
+    </p>
+
+    <button class="uk-button uk-button-primary" id="submit" type="button">Search</button>
+
+    <h2>Result</h2>
+</div>
+
+<div class="uk-flex">
+    <div class="split preview" id="one">
+        <span>Search text</span>
+        <pre id="code"><span></span></pre>
+    </div>
+    <div class="split" id="two">
+        <span>Difference</span>
+        <pre id="diff-entropy"><span></span></pre>
+    </div>
+    <div class="split" id="three">
+        <span>Search</span>
+        <pre id="search-entropy"><span></span></pre>
+    </div>    
+    <div class="split" id="four">
+        <span>Original</span>
+        <pre id="original-entropy"><span></span></pre>
+    </div>  
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/split.min.js') }}"></script>
+<script>
+    Split(['#one', '#two', '#three', '#four'], {sizes: [55, 15, 15, 15]});
+    $('.gutter.gutter-horizontal').addClass('uk-flex uk-flex-middle uk-flex-center').html('<span uk-icon="icon: more-vertical; ratio: 4"></span>');
+
+    let original = $('#original-entropy');
+    let search = $('#search-entropy');
+    let diff = $('#diff-entropy');
+    let code = $('#code');
+    let loading = $('#loading');
+    let btnSubmit = $('#submit');
+
+    btnSubmit.click(function () {
+        loading.show();
+        btnSubmit.attr('disabled', 'disabled');
+        search.html('<span></span>');
+        original.html('<span></span>');
+        diff.html('<span></span>');
+        code.html('<span></span>');
+        let data = {
+            extension: ".java",
+            languageId: "java",
+            content: $('#content').val(),
+            search: $('#search').val(),
+            searchInterval: $('#search-interval').val(),
+        };
+
+        axios.post('/search', data).then(response => {
+            console.log("Got response search.html")
+            console.log(response.data);
+            insertLines({target: code, lines: response.data.searchContent});
+            insertLines({target: original, lines: response.data.originalEntropy});
+            insertLines({target: search, lines: response.data.searchEntropy});
+
+            let difference = [];
+            for (let i = 0; i < response.data.originalEntropy.length; i++) {
+                d = response.data.originalEntropy[i] - response.data.searchEntropy[i];
+                if (Math.abs(d) > 0.5) {
+                    d = `<b>${d}</b>`;
+                }
+                difference.push(d);
+            }
+            insertLines({target: diff, lines: difference, escapeHTML: false});
+        }).catch(error => {
+            console.log(error)
+        }).finally(() => {
+            loading.hide();
+            btnSubmit.removeAttr('disabled');
+        });
+    });
+
+</script>
+{% endblock %}

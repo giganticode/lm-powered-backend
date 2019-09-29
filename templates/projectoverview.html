@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>
+    Project overview
+</h1>
+
+<ul class="uk-list">
+    {%for hash in files%}
+        <li class="">
+            <a href="/overview/{{hash}}" class="uk-padding-small uk-display-block uk-card uk-card-body uk-card-default uk-link-toggle">
+                <h3 class="uk-card-title"><span class="uk-link-heading">Project-name: <b>{{files[hash]['name']}}</b></span></h3>
+                <p>Path: {{files[hash]['uri']['path']}}</p>
+            </a>
+        </li>
+    {%endfor%}
+</ul>
+
+{% endblock %}
+
+{% block js %}
+<script>
+
+</script>
+{% endblock %}

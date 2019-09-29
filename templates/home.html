@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1>Visualizing contextual information within Visual Studio Code</h1>
+
+<ul class="uk-list">
+    {%for item in list%}
+        <li class="">
+            <a href="{{item['url']}}" class="uk-padding-small uk-display-block uk-card uk-card-body uk-card-default uk-link-toggle">
+                <div class="uk-grid">
+                    <div class="uk-width-auto uk-flex uk-flex-middle uk-flex-center">
+                        <span uk-icon="icon: {{item['icon']}}; ratio: 2"></span>
+                    </div>
+                    <div class="uk-with-expand">
+                        <h3 class="uk-card-title"><span class="uk-link-heading">{{item['name']}}</span></h3>
+                        <p>{{item['description']}}</p>
+                    </div>
+                </div>
+            </a>
+        </li>
+    {%endfor%}
+</ul>
+
+<div class="uk-margin-top uk-padding-small uk-display-block uk-card uk-card-body uk-card-default">
+    <div class="uk-grid">
+        <div class="uk-width-auto uk-flex uk-flex-middle uk-flex-center">
+            <span uk-icon="icon: info; ratio: 2"></span>
+        </div>
+        <div class="uk-with-expand">
+            <h3 class="uk-card-title">Information</h3>
+            <p>
+                Languagemodel-path: {{lmpath}}<br>
+                ModelZoo-path: {{modelzoopath}}
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script>
+    
+</script>
+{% endblock %}
