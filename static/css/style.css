@@ -62,3 +62,11 @@ span:empty:after {
   width: 30px;
   box-sizing: border-box;
 }
+
+span.token {
+    display: initial;
+}
+
+span.line {
+    display: block;
+}

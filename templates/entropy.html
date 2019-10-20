@@ -10,29 +10,21 @@
 <div id="toggle">
     <p>
         <label>
-            Aggregation-function:
-            <select class="uk-select" id="aggregator" name="aggregator">
-                <option value="full-token-average" selected>full-token-average (default)</option>
-                <option value="subtoken-average">subtoken-average</option>
-                <option value="full-token-entropies">full-token-entropies</option>
-            </select>
-        </label>
-    </p>
-
-    <p>
-        <label>
             Code
-            <textarea class="uk-textarea" rows="10" id="content" name="content"></textarea>
+            <textarea class="uk-textarea" rows="10" id="content" name="content">
+public class Test {
+    public static void main(String[] args) {
+    }
+}</textarea>
         </label>
     </p>
 
     <button class="uk-button uk-button-primary" id="submit" type="button">Calculate entropies</button>
 
     <h2>Result</h2>
-    
 </div>
 
-<div class="uk-flex">
+<div class="uk-flex uk-width-1-1">
     <div class="split preview" id="one">
         <pre id="result"><span></span></pre>
     </div>
@@ -64,15 +56,14 @@
             filePath: "demo/temp",
             noReturn: false,
             timestamp: Date.now(),
-            aggregator: $('#aggregator').val(),
             content: $('#content').val(),
         };
 
         axios.post('/languagemodel', data).then(response => {
             console.log("Got response entropy.html")
             console.log(response.data);
-            insertLines({target: result, lines: response.data});
-            insertLines({target: code, lines: data.content});
+            insertLines({target: result, lines: response.data.map(e => e.aggregated_result.bin_entropy.toFixed(5))});
+            formatEntropies(response.data, code);
         }).catch(error => {
             console.log(error)
         }).finally(() => {
@@ -80,8 +71,6 @@
             btnSubmit.removeAttr('disabled');
         });
     });
-
-
 
 </script>
 {% endblock %}

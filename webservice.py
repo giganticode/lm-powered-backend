@@ -9,6 +9,10 @@ from decimal import Decimal
 import re
 # Flask webservice
 from flask import Flask, render_template, request, json, redirect
+from json import JSONEncoder
+import pickle
+from decimal import Decimal
+from base64 import b64encode, b64decode
 
 # check if the path of the needed Languagemodel is defined
 langModelPath = os.environ.get('LANG_MODEL_PATH')
@@ -17,8 +21,11 @@ if langModelPath is None or not os.path.isdir(langModelPath):
     exit()
 
 sys.path.insert(0, langModelPath)
-from langmodels.inference.entropies import get_entropy_for_each_line, word_average, word_entropy_list, subword_average
+# def get_entropy_for_each_line(trained_model: TrainedModel, file: str, verbose: bool = False, only_aggregated_entropies: bool = True)
+from langmodels.inference.entropies import get_entropy_for_each_line
 from langmodels.model import TrainedModel
+from langmodels.evaluation.common import EvaluationResult
+from dataprep.parse.model.metadata import PreprocessingMetadata
 
 PORT = 8080
 global rootPath
@@ -66,13 +73,12 @@ def search_page():
 def overview_project(projecthash):
     return render_template("fileoverview.html", projecthash = projecthash, project = files[projecthash])   
 
-@app.route('/overview/<projecthash>/<filehash>', defaults={'aggregator': 'full-token-average'})
-@app.route('/overview/<projecthash>/<filehash>/<aggregator>')
-def overview_file(projecthash, filehash, aggregator):
+@app.route('/overview/<projecthash>/<filehash>')
+def overview_file(projecthash, filehash):
     file = files[projecthash]['files'][filehash]
 
     contentFilePath = os.path.join(rootPath, 'cache', 'input', projecthash, filehash)
-    entropyFilePath = os.path.join(rootPath, 'cache', 'output', aggregator, projecthash, filehash)
+    entropyFilePath = os.path.join(rootPath, 'cache', 'output', projecthash, filehash)
 
     if os.path.isfile(contentFilePath):
         with open(contentFilePath, 'r') as content_file:
@@ -88,7 +94,7 @@ def overview_file(projecthash, filehash, aggregator):
     else:
         entropyContent = map(lambda x: "", fileContent)
     
-    return render_template("filedetail.html", file = file, fileContent = fileContent, entropyContent = entropyContent, aggregator = aggregator, projecthash = projecthash, filehash = filehash)   
+    return render_template("filedetail.html", file = file, fileContent = fileContent, entropyContentJson = json.dumps(entropyContent), entropyContent = entropyContent, projecthash = projecthash, filehash = filehash)   
 
 @app.route('/search', methods = ['POST'])
 def search():
@@ -107,38 +113,40 @@ def search():
         searchContent.insert(i, '//' + search)
         i += (searchInterval + 1)
 
-    originalEntropies = calculatelEntropiesOfString("\n".join(originalContent), 'subtoken-average', 'original.java')
-    searchEntropies = calculatelEntropiesOfString("\n".join(searchContent), 'subtoken-average', 'search.java')
+    originalEntropies = calculatelEntropiesOfString("\n".join(originalContent), 'original.java')
+    searchEntropies = calculatelEntropiesOfString("\n".join(searchContent), 'search.java')
 
     ret = {}
     ret['originalContent'] = (originalContent)
     ret['searchContent'] = (searchContent)
-    ret['originalEntropy'] = (originalEntropies)
-    ret['searchEntropy'] = (searchEntropies)
+    ret['originalEntropy'] = [custom_to_dict(custom) for custom in originalEntropies]
+    ret['searchEntropy'] = [custom_to_dict(custom) for custom in searchEntropies]
 
     encoded = json.dumps(ret)
     return encoded
 
 # Calculates and retun the entopies of a given inputfile
-def calculatelEntropies(inputPath, aggregator):
-    if aggregator == "subtoken-average":
-        entropies = get_entropy_for_each_line(model, inputPath, subword_average, False)    
-    elif aggregator == "full-token-entropies":
-        entropies = get_entropy_for_each_line(model, inputPath, word_entropy_list, False)    
+def calculatelEntropies(inputPath):
+    only_aggregated_entropies = False
+    if only_aggregated_entropies :
+        entropies = get_entropy_for_each_line(model, inputPath, False, True)  
+        return entropies
     else:
-        entropies = get_entropy_for_each_line(model, inputPath, word_average, False)   
+        entropies = get_entropy_for_each_line(model, inputPath, False, False)  
+        print("Entropies Calculated....======================================") 
+        # print(entropies)
 
     return entropies
 
 # Calculates and retun the entopies of a given string - the string is saved to a file (name specified) in the temp folder
-def calculatelEntropiesOfString(string, aggregator, name):
+def calculatelEntropiesOfString(string, name):
     inputFile = os.path.join(rootPath, 'cache', 'temp', name)
 
     with open(inputFile, 'w') as outfile:		
         outfile.write(string)
         outfile.close()	
 
-    return calculatelEntropies(inputFile, aggregator)
+    return calculatelEntropies(inputFile)
 
 @app.route('/autocompletion', methods = ['POST'])
 def autocompletion():
@@ -165,7 +173,6 @@ def user():
     filePath = data.get('filePath', '')
     noReturn = data.get('noReturn', 'false') == "true"
     timestamp = float(data.get('timestamp', 1))/1000
-    aggregator = data.get('aggregator', 'full-token-average')
     content = data.get('content', '')
     workspaceFolder = data.get('workspaceFolder', None)
 
@@ -188,18 +195,17 @@ def user():
         files[projectHash]['files'][hashedName] = {
             'path': filePath, 
             'name': os.path.basename(filePath), 
-            'relpath': os.path.relpath(filePath, workspaceFolder['uri']['fsPath']),
-            'aggregator': aggregator}
+            'relpath': os.path.relpath(filePath, workspaceFolder['uri']['fsPath'])}
 
         with open(os.path.join(rootPath, 'files.json'), 'w') as outfile:		
             json.dump(files, outfile)	
             outfile.flush()
             outfile.close()	
         
-        path = os.path.join(rootPath, 'cache', 'output', aggregator, projectHash, hashedName)
+        path = os.path.join(rootPath, 'cache', 'output', projectHash, hashedName)
     
     else:
-        path = os.path.join(rootPath, 'cache', 'output', aggregator, 'temp', hashedName)
+        path = os.path.join(rootPath, 'cache', 'output', 'temp', hashedName)
     
     if os.path.isfile(path):
         modTimesinceEpoc = os.path.getmtime(path)
@@ -224,12 +230,12 @@ def user():
         f.write(content)
         f.close()
 
-        entropies = calculatelEntropies(savePath, aggregator) 
+        entropies = calculatelEntropies(savePath) 
         print("entropies calculated")
         
         # write entropies to file (json-format)
         with open(path, 'w') as f:
-            json.dump(entropies, f)	
+            json.dump([custom_to_dict(custom) for custom in entropies], f)
             f.close()	
 
     if noReturn == True:
@@ -239,6 +245,15 @@ def user():
             return content_file.read()
 
     return "request processed"
+
+def custom_to_dict(custom):
+    return {
+        'text': custom.text,
+        'prep_text': custom.prep_text,
+        'results': custom.results,
+        'prep_metadata': {'word_boundaries': custom.prep_metadata.word_boundaries, 'nonprocessable_tokens': list(custom.prep_metadata.nonprocessable_tokens)},
+        'aggregated_result': custom.aggregated_result,
+    }
 
 def checkOrCreateForFilepath(path):
     directory = os.path.dirname(path)
@@ -262,9 +277,7 @@ if os.path.exists(filesJsonPath):
 
 checkOrCreate(os.path.join(rootPath, 'cache', 'input'))
 checkOrCreate(os.path.join(rootPath, 'cache', 'temp'))
-checkOrCreate(os.path.join(rootPath, 'cache', 'output', 'full-token-average'))
-checkOrCreate(os.path.join(rootPath, 'cache', 'output', 'full-token-entropies'))
-checkOrCreate(os.path.join(rootPath, 'cache', 'output', 'subtoken-average'))
+checkOrCreate(os.path.join(rootPath, 'cache', 'output'))
 
 if __name__ == '__main__':
     print("Starting WebServer on Port ", PORT)

@@ -11,7 +11,7 @@
     <p>
         <label>
             Search-query
-            <input class="uk-input" id="search" name="search"/>
+            <input class="uk-input" id="search" name="search" value="Test"/>
         </label>
     </p>
 
@@ -25,7 +25,11 @@
     <p>
         <label>
             Code
-            <textarea class="uk-textarea" rows="10" id="content" name="content"></textarea>
+            <textarea class="uk-textarea" rows="10" id="content" name="content">
+public class Test {
+    public static void main(String[] args) {
+    }
+}</textarea>
         </label>
     </p>
 
@@ -87,12 +91,12 @@
             console.log("Got response search.html")
             console.log(response.data);
             insertLines({target: code, lines: response.data.searchContent});
-            insertLines({target: original, lines: response.data.originalEntropy});
-            insertLines({target: search, lines: response.data.searchEntropy});
+            insertLines({target: original, lines: response.data.originalEntropy.map(e => e.aggregated_result.bin_entropy.toFixed(5))});
+            insertLines({target: search, lines: response.data.searchEntropy.map(e => e.aggregated_result.bin_entropy.toFixed(5))});
 
             let difference = [];
             for (let i = 0; i < response.data.originalEntropy.length; i++) {
-                d = response.data.originalEntropy[i] - response.data.searchEntropy[i];
+                d = (response.data.originalEntropy[i].aggregated_result.bin_entropy - response.data.searchEntropy[i].aggregated_result.bin_entropy).toFixed(5);
                 if (Math.abs(d) > 0.5) {
                     d = `<b>${d}</b>`;
                 }
