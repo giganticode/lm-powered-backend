@@ -65,8 +65,31 @@ span:empty:after {
 
 span.token {
     display: initial;
+    margin-right: 1px;
 }
 
 span.line {
     display: block;
+}
+
+#current-model {
+    font-weight: bold;
+}
+
+pre.show-borders span.token:not(.whitespace) {
+    border: solid 1px #333;
+    box-sizing: border-box;
+}
+
+pre.show-colors span.token {
+    color: #111 !important;
+}
+
+pre:not(.show-entropies) span {
+    background-color: transparent !important;
+}
+
+#colors .uk-input {
+    width: 70px;
+    height: 30px;
 }

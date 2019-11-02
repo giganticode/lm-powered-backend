@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>
-    Code Completion
-    <button class="uk-align-right uk-margin-small-top uk-button uk-button-default" type="button"
-        uk-toggle="target: #toggle; animation:  uk-animation-fade"><span uk-icon="pencil"></span></button>
-</h1>
+<h1>Code Completion</h1> 
 
-<div id="toggle">
+<div class="uk-margin-small">
+    Selected model: <span id="current-model"></span> <a class="uk-button uk-button-text" id="open-selectlm-modal" uk-icon="icon: pencil"></a>
+</div>
+
+<div>
     <p>
         <label>
             Context (10 lines)
@@ -39,9 +39,12 @@
     </table>
 </div>
 
+{% include 'modal_select_model.html' %}
+
 {% endblock %}
 
 {% block js %}
+
 <script>
     let result = $('#result');
     let loading = $('#loading');
@@ -53,6 +56,8 @@
         let data = {
             content: $('#content').val(),
             proposalsCount: $('#proposals-count').val(),
+            resetContext: true,
+            model: currentModel,
         };
 
         axios.post('/autocompletion', data).then(response => {

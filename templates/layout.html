@@ -22,6 +22,9 @@
     <meta name="msapplication-TileImage" content="{{ url_for('static', filename='favicon/ms-icon-144x144.png') }}">
     <meta name="theme-color" content="#ffffff">
     {% block head %}
+
+    <!-- https://bgrins.github.io/spectrum/ -->
+    <link rel="stylesheet"  href="{{ url_for('static', filename='css/spectrum.css') }}"/>
     
     <!-- UIkit CSS -->
     <link rel="stylesheet"  href="{{ url_for('static', filename='css/uikit.min.css') }}"/>
@@ -60,8 +63,20 @@
         </div>
     </div>    
 
+    <script>
+        // global variables
+        var currentModel = localStorage.getItem("selectedModel") || false;
+        var currentModelName = localStorage.getItem("selectedModelName") || false;
+        var availableModels = {{models.keys()|list|safe}};
+        var availableModelNames = {{models.values()|list|safe}};
+        var defaultColorMapping = {{default_color_mapping|safe}};
+        var colorMapping = defaultColorMapping;
+    </script>
     <!-- JQuery JS -->
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+
+    <!-- Split JS -->
+    <script type="text/javascript" src="{{ url_for('static', filename='js/split.min.js') }}"></script>
 
     <!-- UIkit JS -->
     <script src="{{ url_for('static', filename='js/uikit.min.js') }}"></script>
@@ -69,6 +84,9 @@
     
     <!-- Axios JS -->
     <script src="{{ url_for('static', filename='js/axios.min.js') }}"></script>
+
+    <!-- ColorPicker JS -->
+    <script src="{{ url_for('static', filename='js/spectrum.js') }}"></script>
 
     <!-- Util JS -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
