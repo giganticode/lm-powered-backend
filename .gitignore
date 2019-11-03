@@ -1,4 +1,5 @@
+.vscode
 cache
-files.json
+node_modules
 __pycache__
 files.json

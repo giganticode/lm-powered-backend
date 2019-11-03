@@ -1,7 +1,0 @@
-{
-    "dev_10k_1_10" : {"path": "dev_10k_1_10_190923.132328", "name": "Random model"},
-    "langmodel_small_split_10k_1_512": {"path": "langmodel-small-split_10k_1_512_190906.154943", "name": "Tiny model"},
-    "langmodel_medium_split_10k_1_512": {"path": "langmodel-medium-split_10k_1_512_190924.154542_-_langmodel-medium-split_10k_1_512_190925.141033", "name": "Small model"},
-    "langmodel_medium_split_1k_1_512": {"path": "langmodel-medium-split_1k_1_512_190926.101149", "name": "Small model 1k"},
-    "langmodel_large_split_10k_1_512": {"path": "langmodel-large-split_10k_1_512_190926.120146", "name": "Medium model"}
-}
