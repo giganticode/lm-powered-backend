@@ -113,7 +113,7 @@ export default {
           console.log("Got response");
           console.log(response.data);
           let entropies = response.data.entropies;
-          this.$refs.resultViewer.showEntropies(entropies, data.metrics, data.tokenType);
+          this.$refs.resultViewer.showEntropies(entropies);
 
           this.metadata = response.data.metadata;
         })

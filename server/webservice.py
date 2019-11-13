@@ -24,6 +24,7 @@ sys.path.insert(0, langModelPath)
 import langmodels.modelregistry as modelRegistry
 
 from util.modelinstance import ModelInstance
+from util.entropyresult import EntropyResult, EntropyLine, Token
 from controller.project_overview_controller import ProjectOverviewController
 from controller.entropy_controller import EntropyController
 
@@ -46,11 +47,10 @@ app = Flask(__name__, static_folder='')
 app.debug = True
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# read cached files for debugging
 files = {}
-filesJsonPath = os.path.join(rootPath, 'files.json')
-if os.path.exists(filesJsonPath):
-    with open(filesJsonPath, 'r') as json_files:
+files_json_path = os.path.join(rootPath, 'files.json')
+if os.path.exists(files_json_path):
+    with open(files_json_path, 'r') as json_files:
         try:
             files = json.load(json_files)
         except:
@@ -59,7 +59,7 @@ if os.path.exists(filesJsonPath):
 
 # controllers
 project_overview_controller = ProjectOverviewController(rootPath, files)
-entropy_controller = EntropyController(rootPath, models)
+entropy_controller = EntropyController(rootPath, models, files)
 
 @app.route('/')
 def default():
@@ -111,9 +111,7 @@ def api_compare():
 def api_search():
     return entropy_controller.get_search(request, models)
 
-check_or_create(os.path.join(rootPath, 'cache', 'input'))
-check_or_create(os.path.join(rootPath, 'cache', 'temp'))
-check_or_create(os.path.join(rootPath, 'cache', 'output'))
+check_or_create(os.path.join(rootPath, 'cache'))
 
 if __name__ == '__main__':
     print("Starting WebServer on Port ", PORT)

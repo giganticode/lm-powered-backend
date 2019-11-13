@@ -166,11 +166,7 @@ export default {
       this.lines = [];
     },
 
-    showEntropies(first, second, metrics, tokenType) {
-      let realMetrics = metrics || 'full_token_entropy';
-      let realTokenType = tokenType || 'all';
-      let scenarioId = `${realMetrics}/${realTokenType}`;
-
+    showEntropies(first, second) {
       this.entropyColorMapping = this.$store.getters.colorMappingEntropy,
       this.differenceColorMapping = this.$store.getters.colorMappingPercent,
       this.entropies = {first: [], second: [], difference: []};
@@ -183,16 +179,16 @@ export default {
 
       let currentColorIndex = 0;
 
-      for (let i = 0; i < first.length; i++) {
-        let firstLine = first[i];
-        let secondLine = second[i];
+      for (let i = 0; i < first.lines.length; i++) {
+        let firstLine = first.lines[i];
+        let secondLine = second.lines[i];
         let tokens = [];
 
         // parse line-entropy
-        this.entropies.first.push(firstLine.scenarios[scenarioId].average);
-        this.entropies.second.push(secondLine.scenarios[scenarioId].average);
+        this.entropies.first.push(firstLine.line_entropy);
+        this.entropies.second.push(secondLine.line_entropy);
 
-        let diff = firstLine.scenarios[scenarioId].average / secondLine.scenarios[scenarioId].average;
+        let diff = firstLine.line_entropy / secondLine.line_entropy;
         diff = ((diff < 1 ? 1 / diff : diff) - 1) * 100;
         diff = isNaN(diff) ? 0 : diff
         this.entropies.difference.push(diff);
@@ -204,8 +200,10 @@ export default {
         }
         let remainingText = firstLine.text;
 
-        for (let j = 0; j < firstLine.prep_text.length; j++) {
-          let text = firstLine.prep_text[j].replace('</t>', '').replace(/\n/, '');
+        for (let j = 0; j < firstLine.tokens.length; j++) {
+          let firstToken = firstLine.tokens[j];
+          let secondToken = secondLine.tokens[j];
+          let text = firstToken.text.replace('</t>', '').replace(/\n/, '');
 
           let color = this.colors[currentColorIndex];
 
@@ -214,43 +212,65 @@ export default {
           let startIndex = 0;
           let endIndex = text.length;
           let iteration = 0;
-          while (found === false) {
+
+          // special char: EOL
+          if (firstToken.text == '<EOL>') {
+            let firstEntropy = firstToken.entropy || 0;
+            let secondEntropy = secondToken.entropy || 0;
+
+            let diff = firstEntropy / secondEntropy;
+            diff = ((diff < 1 ? 1 / diff : diff) - 1) * 100
+            diff = isNaN(diff) ? 0 : diff
+
+            tokens.push({
+              isWhitespace: false,
+              text: '',
+              backgroundColor: 'transparent',
+              color: color,
+              entropy1: firstEntropy,
+              entropy2: secondEntropy,
+              entropyDiff: diff,
+              tooltip: `'EOL' -> entropy: ${firstEntropy.toFixed(3)} <=> ${secondEntropy.toFixed(3)} (diff: ${diff.toFixed(2)} %)`,
+            });
+          } else {
+            while (found === false) {
+              let firstEntropy = firstToken.entropy || 0;
+              let secondEntropy = secondToken.entropy || 0;
+
+              let diff = firstEntropy / secondEntropy;
+              diff = ((diff < 1 ? 1 / diff : diff) - 1) * 100
+              diff = isNaN(diff) ? 0 : diff
+              
               if (remainingText.substring(startIndex, endIndex) == text) {
-                  remainingText = remainingText.substring(endIndex);
-                  let firstEntropy = firstLine.scenarios[scenarioId].subtoken_values[j] || 0;
-                  let secondEntropy = secondLine.scenarios[scenarioId].subtoken_values[j] || 0;
+                remainingText = remainingText.substring(endIndex);
 
-                  let diff = firstEntropy / secondEntropy;
-                  diff = ((diff < 1 ? 1 / diff : diff) - 1) * 100
-                  diff = isNaN(diff) ? 0 : diff
-                  // let backgroundColor = this.mapEntropyToColor(diff);
+                tokens.push({
+                  isWhitespace: false,
+                  text: text,
+                  backgroundColor: 'transparent',
+                  color: color,
+                  entropy1: firstEntropy,
+                  entropy2: secondEntropy,
+                  entropyDiff: diff,
+                  tooltip: `'${text}': ${firstEntropy.toFixed(3)} <=> ${secondEntropy.toFixed(3)} (diff: ${diff.toFixed(2)} %)`,
+                });
 
-                  tokens.push({
-                    isWhitespace: false,
-                    text: text,
-                    backgroundColor: 'transparent',
-                    color: color,
-                    entropy1: firstEntropy,
-                    entropy2: secondEntropy,
-                    entropyDiff: diff,
-                    tooltip: `'${text}': ${firstEntropy.toFixed(3)} <=> ${secondEntropy.toFixed(3)} (diff: ${diff.toFixed(2)} %)`,
-                  });
-
-                  found = true;
+                found = true;
               }
               else {
-                  tokens.push({
-                    isWhitespace: true,
-                    text: ' ',
-                    color: '',
-                    backgroundColor: ''
-                  });
-                  startIndex++;
-                  endIndex++;
+                tokens.push({
+                  isWhitespace: true,
+                  text: ' ',
+                  color: '',
+                  backgroundColor: ''
+                });
+                startIndex++;
+                endIndex++;
               }
               if (iteration++ > 25){
-                  break;
+                break;
               }
+            }
           }
           currentColorIndex = ++currentColorIndex % this.colors.length;
         }

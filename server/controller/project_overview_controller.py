@@ -1,6 +1,5 @@
 import os
-from flask import Flask, render_template, request, url_for, json, redirect, jsonify
-from flask_cors import CORS
+from flask import Flask, request, json, redirect, jsonify
 
 class ProjectOverviewController:
     def __init__(self, root_path, files):
@@ -21,9 +20,9 @@ class ProjectOverviewController:
 
     def get_project_file_detail(self, projecthash, filehash):
         project = self.files[projecthash]
-        file = project['files'][filehash]
+        file = project['files'][filehash] 
 
-        file_entropy_path = os.path.join(self.root_path, 'cache', 'output', projecthash, filehash)
+        file_entropy_path = os.path.join(self.root_path, 'cache', projecthash, filehash)
         entropies = []
 
         if os.path.isfile(file_entropy_path):

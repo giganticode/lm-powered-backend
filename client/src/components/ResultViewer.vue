@@ -84,35 +84,28 @@ export default {
       }
       return colors[colors.length-1].color;
     },
-    clearData() {
-      this.entropies = [];
-      this.lines = [];
-    },
-    showEntropies(data, metrics, tokenType) {
-      let realMetrics = metrics || 'full_token_entropy';
-      let realTokenType = tokenType || 'all';
-      let scenarioId = `${realMetrics}/${realTokenType}`;
-      this.entropyToColorMapping = this.$store.getters.colorMappingEntropy,
+    showEntropies(data) {
+      this.entropyToColorMapping = this.$store.getters.colorMappingEntropy;
       this.entropies = [];
       this.lines = [];
 
       let currentColorIndex = 0;
 
-      for (let i = 0; i < data.length; i++) {
-        let line = data[i];
+      for (let i = 0; i < data.lines.length; i++) {
+        let line = data.lines[i];
         let tokens = [];
 
         // parse line-entropy
-        this.entropies.push(line.scenarios[scenarioId].average);
+        this.entropies.push(line.line_entropy);
 
         // parse token-entropies and tokens
         let remainingText = line.text;
 
-        for (let j = 0; j < line.prep_text.length; j++) {
-          let text = line.prep_text[j].replace('</t>', '').replace(/\n/, '');
+        for (let j = 0; j < line.tokens.length; j++) {
+          let token = line.tokens[j];
+          let text = token.text.replace('</t>', '').replace(/\n/, '');
 
-          let entropy = line.scenarios[scenarioId].subtoken_values[j];
-          // let tooltip = entropyInstance.tooltip || `'${text}' -> entropy: ${(entropy || 0).toFixed(3)}`
+          let entropy = token.entropy;
           let tooltip = `'${text}' -> entropy: ${(entropy || 0).toFixed(3)}`
           let color = this.colors[currentColorIndex];
 
@@ -121,36 +114,51 @@ export default {
           let startIndex = 0;
           let endIndex = text.length;
           let iteration = 0;
-          while (found === false) {
-              if (remainingText.substring(startIndex, endIndex) == text) {
-                  remainingText = remainingText.substring(endIndex);
 
-                  let backgroundColor = this.mapEntropyToColor(entropy);
+          // special char: EOL
+          if (token.text == '<EOL>') {
+            let backgroundColor = this.mapEntropyToColor(entropy);
 
-                  tokens.push({
-                    isWhitespace: false,
-                    text: text,
-                    backgroundColor: backgroundColor,
-                    color: color,
-                    tooltip: tooltip
-                  });
-
-                  found = true;
-              }
-              else {
-                  tokens.push({
-                    isWhitespace: true,
-                    text: ' ',
-                    color: '',
-                    backgroundColor: ''
-                  });
-                  startIndex++;
-                  endIndex++;
-              }
-              if (iteration++ > 25){
-                  break;
-              }
+            tokens.push({
+              isWhitespace: false,
+              text: '',
+              backgroundColor: backgroundColor,
+              color: color,
+              tooltip: `'EOL' -> entropy: ${(entropy || 0).toFixed(3)}`
+            });
+          } else {
+            while (found === false) {
+                if (remainingText.substring(startIndex, endIndex) == text) {
+                    remainingText = remainingText.substring(endIndex);
+  
+                    let backgroundColor = this.mapEntropyToColor(entropy);
+  
+                    tokens.push({
+                      isWhitespace: false,
+                      text: text,
+                      backgroundColor: backgroundColor,
+                      color: color,
+                      tooltip: tooltip
+                    });
+  
+                    found = true;
+                }
+                else {
+                    tokens.push({
+                      isWhitespace: true,
+                      text: ' ',
+                      color: '',
+                      backgroundColor: ''
+                    });
+                    startIndex++;
+                    endIndex++;
+                }
+                if (iteration++ > 25){
+                    break;
+                }
+            }
           }
+
           currentColorIndex = ++currentColorIndex % this.colors.length;
         }
 

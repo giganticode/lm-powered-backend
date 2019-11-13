@@ -127,7 +127,10 @@ export default {
           console.log("Got response", response.data);
 
           let entropies = response.data.entropies;
-          this.$refs.compareResultViewer.showEntropies(entropies.originalEntropy.filter((e, i) => i % this.interval != 0), entropies.searchEntropy.filter((e, i) => i % this.interval != 0), data.metrics, data.tokenType);
+          entropies.original.lines = entropies.original.lines.filter((e, i) => i % this.interval != 0);
+          entropies.search.lines = entropies.search.lines.filter((e, i) => i % this.interval != 0);
+
+          this.$refs.compareResultViewer.showEntropies(entropies.original, entropies.search);
 
           this.metadata = response.data.metadata;
         })

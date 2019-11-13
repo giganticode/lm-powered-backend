@@ -113,6 +113,10 @@ pre {
     margin-right: 1px;
   }
 
+  span.token:not(.whitespace):empty::before {
+    content: '\00b6';
+  }
+
   span.token.whitespace {
     white-space: pre;
   }
