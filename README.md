@@ -37,7 +37,7 @@ Optional parameters:
 
 --port => Set the port of the webservice (default 8080)
 
---serverhos => Set the host of the webservice (default 127.0.0.1 )
+--serverhost => Set the host of the webservice (default 127.0.0.1 )
 
 --debug => Enable the debug mode (default false)
 
