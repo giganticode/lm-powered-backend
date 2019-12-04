@@ -1,3 +1,3 @@
 Flask==1.1.1
 PyYAML==5.1.2
-giganticode-langmodels==0.0.1a0
+giganticode-langmodels==0.0.1a2
