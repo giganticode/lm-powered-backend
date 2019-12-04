@@ -42,7 +42,7 @@ class EntropyController:
         metadata['time_model_loading'] = stop_watch.elapsed() * 1000
 
         stop_watch.start()
-        model.feed_text(content)
+        model.feed_text(content, extension='java')
         metadata['time_feed'] = stop_watch.elapsed() * 1000
 
         stop_watch.start()
