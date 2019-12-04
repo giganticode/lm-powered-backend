@@ -1,3 +1,4 @@
 Flask==1.1.1
+Flask-Cors==3.0.8
 PyYAML==5.1.2
 giganticode-langmodels==0.0.1a2
