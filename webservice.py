@@ -32,10 +32,6 @@ app = Flask(__name__, static_folder='')
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 models = {}
-registeredModels = modelRegistry.query_all_models(cached = False)
-
-for model_description in registeredModels:
-    models[model_description.id] = ModelInstance(model_description)
 
 files = {}
 rootPath = os.path.dirname(os.path.realpath(__file__))
@@ -94,16 +90,26 @@ check_or_create(os.path.join(rootPath, 'cache'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--debug', default=False, action='store_false', help='Start the server in debug mode.')
-    parser.add_argument('-p', '--port', default=PORT, type=int, action='store', help='Set the port for of the web server.')
-    parser.add_argument('-sh', '--serverhost', default='127.0.0.1', type=str, action='store', help='Set the host of the web server.')
+    parser.add_argument('--debug', default=False, action='store_true', help='Start the server in debug mode.')
+    parser.add_argument('--port', default=PORT, type=int, action='store', help='Set the port for of the web server.')
+    parser.add_argument('--host', default='127.0.0.1', type=str, action='store', help='Set the host of the web server.')
+    parser.add_argument('--use-cache', dest='cached', action='store_true')
+    parser.add_argument('--no-cache', dest='cached', action='store_false')
+    parser.set_defaults(cached=False)
     args = parser.parse_args()
 
     port = args.port
     debug = args.debug
-    host = args.serverhost
+    host = args.host
+    cached = args.cached
 
-    print("Starting WebServer on host " + host + ", Port " + str(port))
-    print("Debug ", debug)
+    print("Starting WebServer on host " + host + ":" + str(port))
+
+    registeredModels = modelRegistry.query_all_models(cached = cached)
+
+    for model_description in registeredModels:
+        models[model_description.id] = ModelInstance(model_description)
 
     app.run(use_reloader=debug, port=port, debug=debug, host=host)
+
+    print("Open http://" + host + ":" + str(port) + "/api/models to see the available language models")
