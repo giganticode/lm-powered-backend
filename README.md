@@ -12,11 +12,23 @@ Download and install Python from the official website https://www.python.org/dow
 Clone the project
 ```
 git clone https://github.com/giganticode/vsc-extension-backend.git
-cd vsc-extension-backend
-python -m venv vsc-extension-backend-venv
-source vsc-extension-backend-venv/bin/activate
 ```
 
+#### Windows
+Run the 'install_and_run.bat'-Script - it will install all dependencies and start the webservice.
+```
+cd vsc-extension-backend
+.\install_and_run.bat
+```
+
+#### Unix
+Run the 'install_and_run.sh'-Script - it will install all dependencies and start the webservice.
+```
+cd vsc-extension-backend
+sh install_and_run.sh
+```
+
+### Manual installation
 #### Windows only
 Install PyTorch
 ```
@@ -46,10 +58,10 @@ Optional parameters:
 --no-cache => Download all available models from the server
 
 
-### Install and start the webservice 
+#### Start the webservice with the provided script
 run the run.bat-script (Windows) or the run.sh-script (UNIX)
 
-Running this script will install all depencies and start the webservice.
+Running this script will start the webservice.
 
 Note: on Windows you have to install PyTorch (See section 'Windows only')
 
