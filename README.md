@@ -11,20 +11,20 @@ Download and install Python from the official website https://www.python.org/dow
 
 Clone the project
 ```
-git clone https://github.com/giganticode/vsc-extension-backend.git
+git clone https://github.com/giganticode/lm-powered-backend.git
 ```
 
 #### Windows
 Run the 'install_and_run.bat'-Script - it will install all dependencies and start the webservice.
 ```
-cd vsc-extension-backend
+cd lm-powered-backend
 .\install_and_run.bat
 ```
 
 #### Unix
 Run the 'install_and_run.sh'-Script - it will install all dependencies and start the webservice.
 ```
-cd vsc-extension-backend
+cd lm-powered-backend
 sh install_and_run.sh
 ```
 
