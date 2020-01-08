@@ -2,3 +2,7 @@
 cache
 __pycache__
 files.json
+
+# Pycharm
+**/.idea/workspace.xml
+**/.idea/tasks.xml
