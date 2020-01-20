@@ -1,5 +1,5 @@
 from langmodels.model import TrainedModel, ModelDescription
-import langmodels.modelregistry as modelRegistry
+from langmodels import repository
 
 class ModelInstance:
     def __init__(self, model_description: ModelDescription):
@@ -10,7 +10,7 @@ class ModelInstance:
 
     def load_model(self):
         print("loading model: " + self.model_description.id)
-        self.model = modelRegistry.load_model_by_id(self.model_description.id)
+        self.model = repository.load_model_by_id(self.model_description.id)
 
     def get_model(self) -> TrainedModel:
         if self.model == None:

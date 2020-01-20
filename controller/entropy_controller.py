@@ -1,13 +1,19 @@
+import hashlib
 import os
-import hashlib 
-from flask import Flask, render_template, request, url_for, json, redirect, jsonify
-from flask_cors import CORS
-from .stopwatch import StopWatch
-from langmodels.evaluation.evaluation import evaluate_model_on_string, evaluate_model_on_file, evaluate_model_on_path
-from langmodels.evaluation.metrics import EvaluationResult, TokenTypes, EvaluationScenario
-from langmodels.model import TrainedModel, ModelDescription
-from util.entropyresult import EntropyResult, EntropyLine, Token
+from typing import List
+
+from flask import json, jsonify
+
+from dataprep.tokens.containers import StringLiteral, SplitContainer
+from evaluation import TokenTypeSubset
+from langmodels.evaluation.evaluation import evaluate_model_on_string
+from langmodels.evaluation.metrics import EvaluationScenario
+from langmodels.model import TrainedModel
+
 from controller.util import check_or_create
+from util.entropyresult import EntropyResult, EntropyLine, Token
+from .stopwatch import StopWatch
+
 
 class EntropyController:
     def __init__(self, root_path, models, files):
@@ -76,8 +82,6 @@ class EntropyController:
         search = data.get('search', '')
         reset_context = parse_bool(data.get('resetContext', False))
         metrics = data.get('metrics', 'full_token_entropy')
-        token_type_raw = data.get('tokenType', 'all')
-        token_type = parse_token_type(token_type_raw)
         search_interval = int(data.get('searchInterval', 10))
         selected_model_name = data.get('model', list(models.keys())[0])
         selected_model = models[selected_model_name]
@@ -96,13 +100,13 @@ class EntropyController:
             i += (search_interval + 1)
 
         stop_watch.start()
-        original_entropies = calculatel_entropies_of_string(selected_model_name, model, "\n".join(originalContent), 'java', metrics = metrics, token_types = token_type)
+        original_entropies = calculate_entropies_of_string(selected_model_name, model, "\n".join(originalContent), 'java', metrics = metrics)
         if reset_context == True:
             model.reset()
         metadata['time_original_entropies'] = stop_watch.elapsed() * 1000
 
         stop_watch.start()
-        search_entropies = calculatel_entropies_of_string(selected_model_name, model, "\n".join(searchContent), 'java', metrics = metrics, token_types = token_type)
+        search_entropies = calculate_entropies_of_string(selected_model_name, model, "\n".join(searchContent), 'java', metrics = metrics)
         if reset_context == True:
             model.reset()
         metadata['time_search_entropies'] = stop_watch.elapsed() * 1000
@@ -131,8 +135,7 @@ class EntropyController:
         content = data.get('content', '')
         reset_context = parse_bool(data.get('resetContext', False))
         metrics = data.get('metrics', 'full_token_entropy')
-        token_type_raw = data.get('tokenType', 'all')
-        token_type = parse_token_type(token_type_raw)
+
         selected_model_name1 = data.get('model1', list(models.keys())[0])
         selected_model_name2 = data.get('model2', list(models.keys())[0])
 
@@ -152,13 +155,13 @@ class EntropyController:
             return {'error': 'language not supported yet'}, 406
 
         stop_watch.start()
-        entropies1 = calculatel_entropies_of_string(selected_model_name1, model1, content, language_id, metrics = metrics, token_types = token_type) 
+        entropies1 = calculate_entropies_of_string(selected_model_name1, model1, content, language_id, metrics = metrics)
         if (reset_context):
             model1.reset()
         metadata['time_entropy1_calculation'] = stop_watch.elapsed() * 1000
 
         stop_watch.start()
-        entropies2 = calculatel_entropies_of_string(selected_model_name2, model2, content, language_id, metrics = metrics, token_types = token_type) 
+        entropies2 = calculate_entropies_of_string(selected_model_name2, model2, content, language_id, metrics = metrics)
         if (reset_context):
             model2.reset()
         metadata['time_entropy2_calculation'] = stop_watch.elapsed() * 1000
@@ -188,8 +191,6 @@ class EntropyController:
         content = data.get('content', '')
         reset_context = parse_bool(data.get('resetContext', False))
         metrics = data.get('metrics', 'full_token_entropy')
-        token_type_raw = data.get('tokenType', 'all')
-        token_type = parse_token_type(token_type_raw)
         workspace_folder = data.get('workspaceFolder', None)
         selected_model_name = data.get('model', list(models.keys())[0])
         selected_model = models[selected_model_name]
@@ -231,7 +232,7 @@ class EntropyController:
         entropies = None
         if shouldCalculateEntropies:
             stop_watch.start()
-            entropies = calculatel_entropies_of_string(selected_model_name, model, content, language_id, metrics = metrics, token_types = token_type) 
+            entropies = calculate_entropies_of_string(selected_model_name, model, content, language_id, metrics = metrics)
             if (reset_context):
                 model.reset()
 
@@ -272,23 +273,22 @@ class EntropyController:
             response.headers.add('Access-Control-Allow-Origin', '*')
             return response
 
-# calculates the entropy of a string: important -> only one type of metrics and tokentype
-def calculatel_entropies_of_string(languagemodel_name: str, model: TrainedModel, text: str, extension = 'java', metrics = 'full_token_entropy', token_types = TokenTypes.ALL):
-    entropies = evaluate_model_on_string(model, text, extension, metrics = {metrics}, token_types = {token_types}) #, token_types={TokenTypes.ALL, TokenTypes.ONLY_COMMENTS, TokenTypes.ALL_BUT_COMMENTS})  # full_token_entropy, subtoken_entropy, mrr
 
-    # convert result to the predefined structure
-    result = EntropyResult(languagemodel_name, metrics, token_types)
-    scenario = EvaluationScenario(metric_name = metrics, token_types = token_types.value)
-    for line in entropies:
-        text = line.text
-        average = line.scenarios[scenario].average
-        l = EntropyLine(text, average)
-        for (index, sub_token) in enumerate(line.scenarios[scenario].subtoken_values):
-            t = line.prep_text[index]
-            l.tokens.append(Token(t, sub_token))
-        result.lines.append(l)
+def calculate_entropies_of_string(languagemodel_name: str, model: TrainedModel, text: str, extension ='java', metrics ='full_token_entropy'):
+    evaluations = evaluate_model_on_string(model, text, extension, metrics = {metrics},
+                                           token_type_subsets={TokenTypeSubset.full_set()})
 
-    return result
+    scenario = EvaluationScenario(metric_name = metrics, type_subset=TokenTypeSubset.full_set())
+    lines: List[EntropyLine] = []
+    for evaluation in evaluations:
+        evaluation_result = evaluation.scenarios[scenario]
+        tokens: List[Token] = []
+        for (prep_token, token_type, value) in zip(evaluation_result.tokens, evaluation_result.token_types, evaluation_result.values):
+            tokens.append(Token(prep_token, value, token_type))
+        lines.append(EntropyLine(evaluation.text, evaluation_result.aggregated_value, tokens))
+
+    return EntropyResult(lines, metrics, languagemodel=languagemodel_name)
+
     
 def parse_bool(s):
     if isinstance(s, bool):
@@ -297,11 +297,3 @@ def parse_bool(s):
         return True
     else:
         return False
-
-def parse_token_type(s) -> TokenTypes:
-    if s.lower() == 'only_comments':
-        return TokenTypes.ONLY_COMMENTS
-    elif s.lower() == 'all_but_comments':
-        return TokenTypes.ALL_BUT_COMMENTS
-    else:
-        return TokenTypes.ALL

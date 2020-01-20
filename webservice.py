@@ -1,26 +1,14 @@
-import sys
-import os
 import argparse
-import math
-import hashlib 
-import mimetypes
-import time
-import pickle
-from datetime import datetime
-from decimal import Decimal
-import re
-from flask import Flask, render_template, request, json, redirect, jsonify
+import os
+
+from flask import Flask, request, json, jsonify
 from flask_cors import CORS
-from decimal import Decimal
-from base64 import b64encode, b64decode
-from controller.util import check_or_create
 
-import langmodels.modelregistry as modelRegistry
-
-from util.modelinstance import ModelInstance
-from util.entropyresult import EntropyResult, EntropyLine, Token
-from controller.project_overview_controller import ProjectOverviewController
+from langmodels import repository
 from controller.entropy_controller import EntropyController
+from controller.project_overview_controller import ProjectOverviewController
+from controller.util import check_or_create
+from util.modelinstance import ModelInstance
 
 PORT = 8080
 global rootPath
@@ -105,7 +93,7 @@ if __name__ == '__main__':
 
     print("Starting WebServer on host " + host + ":" + str(port))
 
-    registeredModels = modelRegistry.query_all_models(cached = cached)
+    registeredModels = repository.query_all_models(cached = cached)
 
     for model_description in registeredModels:
         models[model_description.id] = ModelInstance(model_description)
