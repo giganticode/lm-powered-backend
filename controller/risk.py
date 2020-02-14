@@ -4,9 +4,16 @@ import logging
 import os
 from typing import Dict
 
+import jsons
+
 from core import calculate_entropies_of_string
 
 logger = logging.getLogger()
+
+
+def is_file_empty(path: str) -> bool:
+    with open(path, 'r') as f:
+        return f.read() == ''
 
 
 def risk(workspace_folder: Dict, file_path: str, content: str, files: Dict, root_path: str,
@@ -30,7 +37,7 @@ def risk(workspace_folder: Dict, file_path: str, content: str, files: Dict, root
 
         _save_files(files, os.path.join(root_path, 'files.json'))
 
-        if os.path.isfile(cached_file):
+        if os.path.isfile(cached_file) and not is_file_empty(cached_file):
             modTimesinceEpoc = os.path.getmtime(cached_file)
 
             if modTimesinceEpoc < timestamp:
@@ -45,7 +52,9 @@ def risk(workspace_folder: Dict, file_path: str, content: str, files: Dict, root
             _save_entropies_to_file(entropies, cached_file)
     else:
         with open(cached_file, 'r') as content_file:
-            entropies = json.loads(content_file.read())
+            content = content_file.read()
+            entropies = json.loads(content)
+    return entropies
 
 
 def _save_entropies_to_file(entropies, output_path):
@@ -54,9 +63,9 @@ def _save_entropies_to_file(entropies, output_path):
         os.makedirs(path)
 
     with open(output_path, 'w') as f:
-        json.dump(entropies, f)
+        f.write(jsons.dumps(entropies))
 
 
 def _save_files(files, files_json_path):
     with open(files_json_path, 'w') as outfile:
-        json.dump(files, outfile)
+        outfile.write(jsons.dumps(files))
