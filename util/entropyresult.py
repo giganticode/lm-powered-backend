@@ -14,12 +14,6 @@ class Token(object):
         self.entropy = entropy
         self.type = type
 
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-
-    def serialize(self):
-        return self.toJSON()
-
 
 @dataclass
 class EntropyLine(object):
@@ -27,21 +21,8 @@ class EntropyLine(object):
     line_entropy: float
     tokens: [Token]
 
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-    
-    def serialize(self):
-        return self.toJSON()
-
 
 @dataclass
 class EntropyResult(object):
     lines: [EntropyLine]
     metrics: str
-    languagemodel: str
-
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
-
-    def serialize(self):
-        return self.toJSON()
