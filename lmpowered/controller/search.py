@@ -1,4 +1,4 @@
-from core import calculate_entropies_of_string
+from lmpowered.core import calculate_entropies_of_string
 from langmodels.model import TrainedModel
 
 

@@ -3,7 +3,7 @@ from typing import List
 from langmodels.evaluation import evaluate_model_on_string, TokenTypeSubset
 from langmodels.evaluation.metrics import EvaluationScenario
 from langmodels.model import TrainedModel
-from util.entropyresult import EntropyLine, Token, EntropyResult
+from lmpowered.util.entropyresult import EntropyLine, Token, EntropyResult
 
 
 def calculate_entropies_of_string(model: TrainedModel, text: str, extension ='java', metrics ='full_token_entropy'):

@@ -12,9 +12,9 @@ from flask_session import Session
 from langmodels import repository
 from langmodels.evaluation.customization import all_subclasses
 
-from controller.risk import risk
-from controller.search import search
-from core import calculate_entropies_of_string
+from lmpowered.controller import risk
+from lmpowered.controller import search
+from lmpowered.core import calculate_entropies_of_string
 
 logger = logging.getLogger()
 

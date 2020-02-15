@@ -1,2 +1,2 @@
-python load_model_pool.py &
-python webservice.py
+python lmpowered/load_model_pool.py &
+python lmpowered/webservice.py

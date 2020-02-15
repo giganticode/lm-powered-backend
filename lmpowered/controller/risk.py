@@ -6,7 +6,7 @@ from typing import Dict
 
 import jsons
 
-from core import calculate_entropies_of_string
+from lmpowered.core import calculate_entropies_of_string
 
 logger = logging.getLogger()
 
