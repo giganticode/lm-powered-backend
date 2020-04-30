@@ -5,14 +5,14 @@ from typing import List
 from flask import json, jsonify
 
 from dataprep.tokens.containers import StringLiteral, SplitContainer
-from evaluation import TokenTypeSubset
+from langmodels.evaluation import TokenTypeSubset
 from langmodels.evaluation.evaluation import evaluate_model_on_string
 from langmodels.evaluation.metrics import EvaluationScenario
 from langmodels.model import TrainedModel
 
 from controller.util import check_or_create
 from util.entropyresult import EntropyResult, EntropyLine, Token
-from .stopwatch import StopWatch
+from controller.stopwatch import StopWatch
 
 
 class EntropyController:
