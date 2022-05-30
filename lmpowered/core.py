@@ -1,7 +1,7 @@
 from typing import List
 
 from langmodels.evaluation import evaluate_model_on_string, TokenTypeSubset
-from langmodels.evaluation.metrics import EvaluationScenario
+from evaluation.definitions import EvaluationScenario
 from langmodels.model import TrainedModel
 from lmpowered.util.entropyresult import EntropyLine, Token, EntropyResult
 
